@@ -2,16 +2,32 @@
 Technical Architect Agent — Claude API Edition (Clean Build)
 - PDF parsing via pypdf
 - AI evaluation via anthropic SDK (claude-sonnet-4-20250514)
-- Zero legacy imports (no google.genai, no openai, no raw requests)
+- Supports: Streamlit secrets.toml + HuggingFace env vars
 """
 import json
 import io
+import os
 import streamlit as st
 from pypdf import PdfReader
 import anthropic
 from utils.logger import get_logger
 
 logger = get_logger("architect_agent")
+
+
+def _get_api_key() -> str:
+    """
+    Read Anthropic API key with priority:
+    1. Streamlit secrets (secrets.toml / Streamlit Cloud)
+    2. Environment variable ANTHROPIC_API_KEY (HuggingFace Spaces)
+    """
+    try:
+        key = st.secrets["anthropic"]["api_key"]
+        if key and not key.startswith("sk-ant-your"):
+            return key
+    except Exception:
+        pass
+    return os.environ.get("ANTHROPIC_API_KEY", "")
 
 
 def extract_text_from_pdf(pdf_file) -> str:
@@ -51,10 +67,13 @@ def evaluate_resume_with_ai(
         logger.warning(f"AI_AGENT: Empty resume for '{candidate_name}'. Skipping.")
         return fallback
 
-    try:
-        api_key = st.secrets["anthropic"]["api_key"]
-        client  = anthropic.Anthropic(api_key=api_key)
+    api_key = _get_api_key()
+    if not api_key:
+        logger.error("AI_AGENT: No API key found in secrets or environment variables.")
+        return {**fallback, "analysis": "API key not configured. Set ANTHROPIC_API_KEY in HuggingFace Secrets or secrets.toml."}
 
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
         logger.info(f"AI_AGENT: Evaluating '{candidate_name}'...")
 
         system_prompt = (
@@ -88,8 +107,6 @@ Return EXACTLY this JSON structure:
         )
 
         raw = message.content[0].text.strip()
-
-        # Defensive: strip markdown fences if model adds them
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"):
@@ -107,10 +124,10 @@ Return EXACTLY this JSON structure:
         return result
 
     except json.JSONDecodeError as e:
-        logger.error(f"AI_AGENT: JSON parse error for '{candidate_name}': {e} | raw={raw[:200]}")
+        logger.error(f"AI_AGENT: JSON parse error for '{candidate_name}': {e}")
         return {**fallback, "analysis": "AI response could not be parsed. Try again."}
     except anthropic.AuthenticationError:
-        logger.error("AI_AGENT: Invalid API key. Check [anthropic] api_key in secrets.toml.")
+        logger.error("AI_AGENT: Invalid API key.")
         return {**fallback, "analysis": "Invalid API key. Check your Anthropic credentials."}
     except anthropic.RateLimitError:
         logger.error("AI_AGENT: Rate limit hit.")
@@ -121,10 +138,7 @@ Return EXACTLY this JSON structure:
 
 
 def process_bulk_resumes(uploaded_files: list, job_description: str) -> list[dict]:
-    """
-    Process multiple PDF resumes in bulk.
-    Returns list of result dicts sorted by score descending.
-    """
+    """Process multiple PDF resumes in bulk, sorted by score descending."""
     results = []
     total = len(uploaded_files)
     logger.info(f"BULK_AGENT: Starting — {total} resumes.")
