@@ -1,7 +1,7 @@
 """
 CV Screener Pro — Enterprise Talent Intelligence Platform
 Full Complete Production Version - Fixed All Pages, Language, Rejection, and 3D HTML Animations
-Combined with Bulletproof PDF V2 Engine Bypass
+Combined with Bulletproof PDF V2 Engine Bypass & Fixed Syntax Bracket 131
 """
 import streamlit as st
 import pandas as pd
@@ -16,7 +16,6 @@ from utils.auth import require_auth, logout
 from utils.logger import get_logger, read_logs, clear_logs
 from utils.data_utils import load_database, append_candidate_to_db
 from agents.architect_agent import process_bulk_resumes
-# DI SINI SUDAH DIUBAH MENGGUNAKAN V2:
 from agents.export_agent import generate_excel_report, generate_pdf_report_v2
 from assets.styles import PREMIUM_CSS
 
@@ -113,19 +112,4 @@ if "Executive Overview" in page:
             <p style="color:#94A3B8; font-size:15px;">Real-time asset management control room and core talent analytical network.</p>
         </div>
         """, unsafe_allow_html=True)
-    with col_anim:
-        render_corporate_animation("Overview")
-
-    df = load_database()
-    total_records = len(df)
-
-    # Core Metric Cards Grid
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        st.markdown(f"""<div class="metric-card"><span class="metric-icon">👥</span><div class="metric-value" style="color:#00E5FF;">{total_records}</div><div class="metric-label">Total Candidates</div></div>""", unsafe_allow_html=True)
-    with c2:
-        if "Skor_AI" in df.columns and df["Skor_AI"].notna().any():
-            avg_score = df["Skor_AI"].dropna().astype(float).mean()
-            st.markdown(f"""<div class="metric-card"><span class="metric-icon">🎯</span><div class="metric-value" style="color:#7000FF;">{avg_score:.1f}</div><div class="metric-label">Average Match Index</div></div>""", unsafe_allow_html=True)
-        else:
-            st.markdown("""<div class="metric-card"><span class="metric-icon">🎯</span><div class="metric-value" style
+    with col_anim
