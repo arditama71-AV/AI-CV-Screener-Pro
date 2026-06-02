@@ -14,6 +14,7 @@ from utils.logger import get_logger, read_logs, clear_logs, LOG_FILE
 from utils.data_utils import load_database, append_candidate_to_db, radar_header_detect
 from agents.export_agent import generate_excel_report, generate_pdf_report
 from assets.styles import PREMIUM_CSS
+from assets.scenes import SCENES
 
 logger = get_logger("main_app")
 
@@ -29,167 +30,6 @@ if not require_auth():
     st.stop()
 
 logger.info("APP: Dashboard session started.")
-
-# ══════════════════════════════════════════════════════════════════
-#  CINEMATIC SCENE TEMPLATES (plain strings — no f-string braces issue)
-# ══════════════════════════════════════════════════════════════════
-
-SCENE_OVERVIEW = """
-<div class="hero-scene scene-overview">
-  <div class="stars-layer-1">
-    <span class="star" style="top:10%;left:5%;width:2px;height:2px"></span>
-    <span class="star" style="top:25%;left:15%;width:1px;height:1px;animation-delay:.5s"></span>
-    <span class="star" style="top:60%;left:8%;width:2px;height:2px;animation-delay:1.2s"></span>
-    <span class="star" style="top:80%;left:20%;width:1px;height:1px;animation-delay:.8s"></span>
-    <span class="star" style="top:15%;left:30%;width:2px;height:2px;animation-delay:1.8s"></span>
-    <span class="star" style="top:45%;left:38%;width:1px;height:1px;animation-delay:.3s"></span>
-    <span class="star" style="top:75%;left:45%;width:2px;height:2px;animation-delay:2.1s"></span>
-    <span class="star" style="top:20%;left:55%;width:1px;height:1px;animation-delay:1.5s"></span>
-    <span class="star" style="top:55%;left:65%;width:2px;height:2px;animation-delay:.6s"></span>
-    <span class="star" style="top:85%;left:72%;width:1px;height:1px;animation-delay:1.9s"></span>
-    <span class="star" style="top:30%;left:85%;width:2px;height:2px;animation-delay:.4s"></span>
-    <span class="star" style="top:65%;left:92%;width:1px;height:1px;animation-delay:2.3s"></span>
-    <span class="star" style="top:40%;left:48%;width:2px;height:2px;animation-delay:1.1s"></span>
-    <span class="star" style="top:90%;left:60%;width:1px;height:1px;animation-delay:.2s"></span>
-  </div>
-  <div class="stars-layer-2">
-    <span class="star big-star" style="top:20%;left:12%;animation-delay:.2s"></span>
-    <span class="star big-star amber" style="top:50%;left:28%;animation-delay:1.4s"></span>
-    <span class="star big-star" style="top:35%;left:58%;animation-delay:.9s"></span>
-    <span class="star big-star purple" style="top:70%;left:82%;animation-delay:1.7s"></span>
-  </div>
-  <div class="planet planet-purple"></div>
-  <div class="planet planet-amber"></div>
-  <div class="shooting-star"></div>
-  <div class="rocket-wrap">
-    <svg width="60" height="80" viewBox="0 0 60 80" xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="30" cy="35" rx="11" ry="22" fill="#E2E8F0"/>
-      <path d="M30 13 Q20 25 19 35 L41 35 Q40 25 30 13" fill="#F1F5FF"/>
-      <circle cx="30" cy="32" r="5" fill="#0EA5E9" stroke="#0369A1" stroke-width="1.5"/>
-      <circle cx="30" cy="32" r="2.5" fill="#7DD3FC"/>
-      <path d="M19 50 L11 60 L19 60 Z" fill="#EF4444"/>
-      <path d="M41 50 L49 60 L41 60 Z" fill="#EF4444"/>
-      <path d="M25 55 L35 55 L33 62 L27 62 Z" fill="#1E3A8A"/>
-      <g class="rocket-flame">
-        <path d="M25 60 Q30 75 35 60 Q33 68 30 70 Q27 68 25 60" fill="#F59E0B"/>
-        <path d="M27 60 Q30 72 33 60 Q31 66 30 67 Q29 66 27 60" fill="#FCD34D"/>
-        <path d="M28 60 Q30 68 32 60" fill="white"/>
-      </g>
-    </svg>
-  </div>
-  <div class="scene-text">
-    <div class="scene-eyebrow"><span class="live-pulse"></span>LIVE DASHBOARD</div>
-    <div class="scene-title">Selamat Datang!</div>
-    <div class="scene-sub">Real-time talent intelligence · Powered by AI</div>
-  </div>
-</div>
-"""
-
-SCENE_MASTER = """
-<div class="hero-scene scene-master">
-  <div class="sun"></div>
-  <div class="cloud c1"></div>
-  <div class="cloud c2"></div>
-  <div class="cloud c3"></div>
-  <div class="cloud c4"></div>
-  <div class="plane-wrap">
-    <svg width="80" height="40" viewBox="0 0 80 40" xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="42" cy="20" rx="32" ry="6" fill="white"/>
-      <path d="M10 20 L0 14 L0 26 Z" fill="#E2E8F0"/>
-      <path d="M30 14 L20 4 L18 4 L24 16 Z" fill="#94A3B8"/>
-      <path d="M30 26 L20 36 L18 36 L24 24 Z" fill="#94A3B8"/>
-      <path d="M55 16 L60 8 L62 8 L60 18 Z" fill="#64748B"/>
-      <path d="M55 24 L60 32 L62 32 L60 22 Z" fill="#64748B"/>
-      <ellipse cx="62" cy="20" rx="6" ry="4" fill="#0EA5E9"/>
-      <rect x="20" y="18" width="3" height="4" fill="#0EA5E9"/>
-      <rect x="27" y="18" width="3" height="4" fill="#0EA5E9"/>
-      <rect x="34" y="18" width="3" height="4" fill="#0EA5E9"/>
-      <rect x="41" y="18" width="3" height="4" fill="#0EA5E9"/>
-      <rect x="48" y="18" width="3" height="4" fill="#0EA5E9"/>
-    </svg>
-  </div>
-  <div class="scene-text scene-text-light">
-    <div class="scene-eyebrow"><span class="live-pulse"></span>DATABASE EXPLORER</div>
-    <div class="scene-title">Master Data</div>
-    <div class="scene-sub">Soar through your candidate records</div>
-  </div>
-</div>
-"""
-
-SCENE_INPUT = """
-<div class="hero-scene scene-input">
-  <div class="paper p1"></div>
-  <div class="paper p2"></div>
-  <div class="paper p3"></div>
-  <div class="paper p4"></div>
-  <div class="paper p5"></div>
-  <span class="spark sp1"></span>
-  <span class="spark sp2"></span>
-  <span class="spark sp3"></span>
-  <span class="spark sp4"></span>
-  <div class="scene-text">
-    <div class="scene-eyebrow"><span class="live-pulse"></span>DATA ENTRY</div>
-    <div class="scene-title">Input Data</div>
-    <div class="scene-sub">Add new candidate records seamlessly</div>
-  </div>
-</div>
-"""
-
-SCENE_AI = """
-<div class="hero-scene scene-ai">
-  <div class="brain-core">
-    <div class="brain-ring r1"></div>
-    <div class="brain-ring r2"></div>
-    <div class="brain-ring r3"></div>
-  </div>
-  <svg class="neural-net" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-    <line x1="15%" y1="30%" x2="45%" y2="20%" stroke="#38BDF8" stroke-width="1"/>
-    <line x1="15%" y1="30%" x2="45%" y2="50%" stroke="#38BDF8" stroke-width="1"/>
-    <line x1="15%" y1="60%" x2="45%" y2="50%" stroke="#22D3EE" stroke-width="1"/>
-    <line x1="15%" y1="60%" x2="45%" y2="80%" stroke="#22D3EE" stroke-width="1"/>
-    <line x1="45%" y1="20%" x2="78%" y2="35%" stroke="#7000FF" stroke-width="1"/>
-    <line x1="45%" y1="50%" x2="78%" y2="35%" stroke="#22D3EE" stroke-width="1"/>
-    <line x1="45%" y1="50%" x2="78%" y2="65%" stroke="#38BDF8" stroke-width="1"/>
-    <line x1="45%" y1="80%" x2="78%" y2="65%" stroke="#38BDF8" stroke-width="1"/>
-  </svg>
-  <span class="ai-node n1"></span>
-  <span class="ai-node n2"></span>
-  <span class="ai-node n3"></span>
-  <span class="ai-node n4"></span>
-  <span class="ai-node n5"></span>
-  <span class="ai-node n6"></span>
-  <span class="ai-node n7"></span>
-  <div class="scene-text">
-    <div class="scene-eyebrow"><span class="live-pulse"></span>AI POWERED</div>
-    <div class="scene-title">AI CV Screener</div>
-    <div class="scene-sub">Claude analyzes every resume</div>
-  </div>
-</div>
-"""
-
-SCENE_LOGS = """
-<div class="hero-scene scene-logs">
-  <div class="matrix-col" style="left:8%;animation-duration:8s">01010110<br>11001010<br>00110101<br>10011010<br>01101100</div>
-  <div class="matrix-col" style="left:22%;animation-duration:6s;animation-delay:1s">10110010<br>01010101<br>11100110<br>00101110<br>10110101</div>
-  <div class="matrix-col" style="left:36%;animation-duration:10s;animation-delay:.5s">11000101<br>01101010<br>10010110<br>11110000<br>01010101</div>
-  <div class="matrix-col" style="left:55%;animation-duration:7s;animation-delay:2s">01101001<br>10110011<br>01010111<br>10001010<br>11100110</div>
-  <div class="matrix-col" style="left:70%;animation-duration:9s;animation-delay:.3s">10101010<br>01010101<br>11001100<br>00110011<br>10010110</div>
-  <div class="matrix-col" style="left:85%;animation-duration:5s;animation-delay:1.5s">01010101<br>10101010<br>11110000<br>00001111<br>10110101</div>
-  <div class="scene-text">
-    <div class="scene-eyebrow"><span class="live-pulse"></span>MONITOR</div>
-    <div class="scene-title">System Logs</div>
-    <div class="scene-sub">Real-time agent health stream</div>
-  </div>
-</div>
-"""
-
-SCENES = {
-    "overview": SCENE_OVERVIEW,
-    "master":   SCENE_MASTER,
-    "input":    SCENE_INPUT,
-    "ai":       SCENE_AI,
-    "logs":     SCENE_LOGS,
-}
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -243,8 +83,13 @@ page = render_sidebar()
 #  HELPERS
 # ══════════════════════════════════════════════════════════════════
 def render_scene(scene_key):
-    """Render the cinematic hero scene for the current page."""
-    st.markdown(SCENES.get(scene_key, ""), unsafe_allow_html=True)
+    """
+    Render cinematic hero scene via st.components.v1.html().
+    Uses iframe — bypasses Streamlit Cloud CSS sanitizer. Animations guaranteed.
+    """
+    html = SCENES.get(scene_key, "")
+    if html:
+        st.components.v1.html(html, height=210, scrolling=False)
 
 
 def metric_card(icon, value, label, accent="blue", badge=None):
