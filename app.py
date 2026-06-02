@@ -1,7 +1,6 @@
 """
 CV Screener Pro — Enterprise Talent Intelligence Platform
-Full Complete Production Version - Fixed All Pages, Language, Rejection, and 3D HTML Animations
-Combined with Bulletproof PDF V2 Engine Bypass & Fixed Colon Bracket 115
+Standardized Ultra-Clean Version - 100% Fixed Syntax & Brackets Encryption
 """
 import streamlit as st
 import pandas as pd
@@ -31,25 +30,21 @@ st.set_page_config(
 # Inject Fixed Premium CSS
 st.markdown(PREMIUM_CSS, unsafe_allow_html=True)
 
-# Authentication Gate
 if not require_auth():
     st.stop()
-
-logger.info("APP: Corporate Dashboard fully loaded.")
 
 # ==============================================================================
 # PREMIUM KORPORAT MULTI-PAGE ANIMATION ENGINE (HTML EMBED METHOD)
 # ==============================================================================
 def render_corporate_animation(page_name):
-    """Menampilkan animasi gedung perkantoran & korporat mewah berbasis HTML murni"""
     if page_name == "Overview":
-        embed_url = "https://embed.lottiefiles.com/animation/95602" # HQ Building Sky
+        embed_url = "https://embed.lottiefiles.com/animation/95602"
     elif page_name == "Master Data":
-        embed_url = "https://embed.lottiefiles.com/animation/68233" # Analytics Tower
+        embed_url = "https://embed.lottiefiles.com/animation/68233"
     elif page_name == "Input":
-        embed_url = "https://embed.lottiefiles.com/animation/93638" # Office Workspace Desk
+        embed_url = "https://embed.lottiefiles.com/animation/93638"
     else:
-        embed_url = "https://embed.lottiefiles.com/animation/41983" # Tech Scanner Hub
+        embed_url = "https://embed.lottiefiles.com/animation/41983"
         
     html_code = f"""
     <div style="display: flex; justify-content: center; align-items: center; background: transparent;">
@@ -70,7 +65,6 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    # User identity profile
     st.markdown(f"""
     <div class="user-profile-badge">
         <span style="font-size: 18px;">👤</span>
@@ -112,22 +106,44 @@ if "Executive Overview" in page:
             <p style="color:#94A3B8; font-size:15px;">Real-time asset management control room and core talent analytical network.</p>
         </div>
         """, unsafe_allow_html=True)
-    with col_anim: # <-- FIXED COLON HERE (BARIS 115)
+    with col_anim:
         render_corporate_animation("Overview")
 
     df = load_database()
     total_records = len(df)
 
-    # Core Metric Cards Grid
+    # Menghitung Metrik Secara Aman dan Kebal Typo
+    avg_score = "—"
+    if "Skor_AI" in df.columns and df["Skor_AI"].notna().any():
+        avg_score = f"{df['Skor_AI'].dropna().astype(float).mean():.1f}"
+
+    passed_count = 0
+    if "Status" in df.columns and not df.empty:
+        passed_count = len(df[df["Status"].astype(str).str.lower().str.contains("lolos|pass|approved|recommended", na=False)])
+
+    # Core Metric Cards Grid Render
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         st.markdown(f'<div class="metric-card"><span class="metric-icon">👥</span><div class="metric-value" style="color:#00E5FF;">{total_records}</div><div class="metric-label">Total Candidates</div></div>', unsafe_allow_html=True)
     with c2:
-        if "Skor_AI" in df.columns and df["Skor_AI"].notna().any():
-            avg_score = df["Skor_AI"].dropna().astype(float).mean()
-            st.markdown(f'<div class="metric-card"><span class="metric-icon">🎯</span><div class="metric-value" style="color:#7000FF;">{avg_score:.1f}</div><div class="metric-label">Average Match Index</div></div>', unsafe_allow_html=True)
-        else:
-            st.markdown('<div class="metric-card"><span class="metric-icon">🎯</span><div class="metric-value" style="color:#7000FF;">—</div><div class="metric-label">Average Match Index</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="metric-card"><span class="metric-icon">🎯</span><div class="metric-value" style="color:#7000FF;">{avg_score}</div><div class="metric-label">Average Match Index</div></div>', unsafe_allow_html=True)
     with c3:
-        if "Status" in df.columns:
-            passed = len(df[df["Status"].str.lower().
+        st.markdown(f'<div class="metric-card"><span class="metric-icon">✅</span><div class="metric-value" style="color:#00F5A0;">{passed_count}</div><div class="metric-label">Passed Selection</div></div>', unsafe_allow_html=True)
+    with c4:
+        st.markdown('<div class="metric-card"><span class="metric-icon">⚡</span><div class="metric-value" style="color:#FF007A;">100%</div><div class="metric-label">AI Agent Health</div></div>', unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Charts Presentation
+    col_chart1, col_chart2 = st.columns([3, 2])
+    with col_chart1:
+        st.markdown('<div class="section-card">', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">📊 Score Curve Allocation</div>', unsafe_allow_html=True)
+        if "Skor_AI" in df.columns and df["Skor_AI"].notna().any():
+            scores = df["Skor_AI"].dropna().astype(float)
+            bins = pd.cut(scores, bins=[0,30,50,70,85,100], labels=["0-30","31-50","51-70","71-85","86-100"])
+            chart_data = bins.value_counts().sort_index().reset_index()
+            chart_data.columns = ["Score Range", "Count"]
+            st.bar_chart(chart_data.set_index("Score Range"), color="#00E5FF")
+        else:
+            st.info("
