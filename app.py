@@ -15,7 +15,7 @@ from utils.auth import require_auth, logout
 from utils.logger import get_logger, read_logs, clear_logs
 from utils.data_utils import load_database, append_candidate_to_db
 from agents.architect_agent import process_bulk_resumes
-from agents.export_agent import generate_excel_report, generate_pdf_report
+from agents.export_agent import generate_excel_report, generate_pdf_report_v2
 from assets.styles import PREMIUM_CSS
 
 logger = get_logger("main_app")
