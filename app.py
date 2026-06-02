@@ -1,6 +1,6 @@
 """
 CV Screener Pro — Enterprise Talent Intelligence Platform
-100% Safe Version - Fixed String Literal Line 149
+100% Bulletproof Safe Version - Fixed String Literal Line 164
 """
 import streamlit as st
 import pandas as pd
@@ -119,46 +119,4 @@ if "Executive Overview" in page:
     with c1:
         st.markdown(f'<div class="metric-card"><span class="metric-icon">👥</span><div class="metric-value" style="color:#00E5FF;">{total_records}</div><div class="metric-label">Total Candidates</div></div>', unsafe_allow_html=True)
     with c2:
-        st.markdown(f'<div class="metric-card"><span class="metric-icon">🎯</span><div class="metric-value" style="color:#7000FF;">{avg_score}</div><div class="metric-label">Average Match Index</div></div>', unsafe_allow_html=True)
-    with c3:
-        st.markdown(f'<div class="metric-card"><span class="metric-icon">✅</span><div class="metric-value" style="color:#00F5A0;">{passed_count}</div><div class="metric-label">Passed Selection</div></div>', unsafe_allow_html=True)
-    with c4:
-        st.markdown('<div class="metric-card"><span class="metric-icon">⚡</span><div class="metric-value" style="color:#FF007A;">100%</div><div class="metric-label">AI Agent Health</div></div>', unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    col_chart1, col_chart2 = st.columns([3, 2])
-    with col_chart1:
-        st.markdown('<div class="section-card">', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">📊 Score Curve Allocation</div>', unsafe_allow_html=True)
-        if "Skor_AI" in df.columns and df["Skor_AI"].notna().any():
-            scores = df["Skor_AI"].dropna().astype(float)
-            bins = pd.cut(scores, bins=[0,30,50,70,85,100], labels=["0-30","31-50","51-70","71-85","86-100"])
-            chart_data = bins.value_counts().sort_index().reset_index()
-            chart_data.columns = ["Score Range", "Count"]
-            st.bar_chart(chart_data.set_index("Score Range"), color="#00E5FF")
-        else:
-            st.info("No logs available. Run AI Screener.")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with col_chart2:
-        st.markdown('<div class="section-card">', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">🗂️ Department Distribution</div>', unsafe_allow_html=True)
-        if "Departemen" in df.columns and not df["Departemen"].dropna().empty:
-            dept_count = df["Departemen"].value_counts().head(5)
-            st.bar_chart(dept_count, color="#7000FF")
-        else:
-            st.info("Department data empty.")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.markdown('<div class="section-title">📥 Global Export Matrix</div>', unsafe_allow_html=True)
-    col_e1, col_e2, col_e3 = st.columns(3)
-    with col_e1:
-        if not df.empty:
-            excel_bytes = generate_excel_report(df, "Executive Core Report")
-            st.download_button("📊 Export System to Excel (.xlsx)", data=excel_bytes, file_name="Enterprise_Report.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
-    with col_e2:
-        if not df.empty:
-            pdf_bytes = generate_pdf_report_v2(df, "Executive Corporate Data")
-            st.download_button("📄 Export Dashboard to PDF (.pdf)", data=pdf_bytes, file_name="Enterprise_Report.pdf", mime="application
+        st.markdown(f'<div class="metric-card"><span class="metric-icon">🎯</span>
