@@ -1,133 +1,214 @@
 """
-Technical Export Agent — Bulletproof Table Edition (V2)
-- Replaced legacy pdf.cell looping with modern with pdf.table() block
-- Fully handles clean data exports to Excel and PDF without encoding crashes
+Export Agent
+- Generates beautifully formatted Excel (.xlsx) via xlsxwriter with corporate colored headers
+- Generates clean landscape-oriented PDF reports via fpdf2
 """
 import io
-import pandas as pd
-from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+import xlsxwriter
 from fpdf import FPDF
+from datetime import datetime
+import pandas as pd
+from utils.logger import get_logger
 
-# ──────────────────────────────────────────────────────────────────────────────
-# EXCEL EXPORT ENGINE
-# ──────────────────────────────────────────────────────────────────────────────
-def generate_excel_report(dataframe: pd.DataFrame, sheet_name="Data Export") -> bytes:
-    wb = Workbook()
-    ws = wb.active
-    ws.title = sheet_name[:31]
-    ws.views.sheetView[0].showGridLines = True
+logger = get_logger("export_agent")
 
-    font_family = "Segoe UI"
-    header_fill = PatternFill(start_color="0F172A", end_color="0F172A", fill_type="solid")
-    header_font = Font(name=font_family, size=11, bold=True, color="FFFFFF")
-    data_font = Font(name=font_family, size=10, color="000000")
-    
-    thin_border = Border(
-        left=Side(style='thin', color='CBD5E1'),
-        right=Side(style='thin', color='CBD5E1'),
-        top=Side(style='thin', color='CBD5E1'),
-        bottom=Side(style='thin', color='CBD5E1')
-    )
-    
-    center_align = Alignment(horizontal='center', vertical='center', wrap_text=True)
-    left_align = Alignment(horizontal='left', vertical='center', wrap_text=True)
+# Corporate Color Palette
+CORP_NAVY    = "#0A1628"
+CORP_BLUE    = "#0066CC"
+CORP_CYAN    = "#00AAFF"
+CORP_LIGHT   = "#EEF2FF"
+CORP_WHITE   = "#FFFFFF"
+CORP_GOLD    = "#F5A623"
 
-    headers = dataframe.columns.tolist()
-    ws.append(headers)
-    for cell in ws[1]:
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = center_align
-        cell.border = thin_border
-    ws.row_dimensions[1].height = 28
 
-    for _, row in dataframe.iterrows():
-        row_values = [str(val) if val is not None else "" for val in row]
-        ws.append(row_values)
-        
-    for row_idx in range(2, ws.max_row + 1):
-        ws.row_dimensions[row_idx].height = 22
-        for cell in ws[row_idx]:
-            cell.font = data_font
-            cell.border = thin_border
-            if len(str(cell.value)) > 25:
-                cell.alignment = left_align
+def _hex_to_rgb(hex_color: str) -> tuple:
+    h = hex_color.lstrip("#")
+    return tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+
+
+def generate_excel_report(df: pd.DataFrame, title: str = "Laporan Kandidat") -> bytes:
+    """
+    Generate a beautifully formatted Excel file using xlsxwriter.
+    Corporate color headers, auto-column widths, alternating rows.
+    """
+    logger.info(f"EXPORT_AGENT: Generating Excel report with {len(df)} records...")
+    output = io.BytesIO()
+    workbook = xlsxwriter.Workbook(output, {"in_memory": True})
+    worksheet = workbook.add_worksheet("Data Kandidat")
+    worksheet.set_landscape()
+    worksheet.fit_to_pages(1, 0)
+
+    # Format definitions
+    header_fmt = workbook.add_format({
+        "bold": True, "font_name": "Calibri", "font_size": 11,
+        "font_color": CORP_WHITE, "bg_color": CORP_NAVY,
+        "border": 1, "border_color": CORP_BLUE,
+        "align": "center", "valign": "vcenter",
+        "text_wrap": True
+    })
+    subheader_fmt = workbook.add_format({
+        "bold": True, "font_name": "Calibri", "font_size": 9,
+        "font_color": CORP_WHITE, "bg_color": CORP_BLUE,
+        "border": 1, "align": "center", "valign": "vcenter"
+    })
+    row_even_fmt = workbook.add_format({
+        "font_name": "Calibri", "font_size": 9,
+        "bg_color": CORP_WHITE, "border": 1, "border_color": "#D0D8E8",
+        "valign": "vcenter"
+    })
+    row_odd_fmt = workbook.add_format({
+        "font_name": "Calibri", "font_size": 9,
+        "bg_color": CORP_LIGHT, "border": 1, "border_color": "#D0D8E8",
+        "valign": "vcenter"
+    })
+    score_high_fmt = workbook.add_format({
+        "font_name": "Calibri", "font_size": 9, "bold": True,
+        "font_color": "#006400", "bg_color": "#E8F5E9",
+        "border": 1, "align": "center", "valign": "vcenter"
+    })
+    score_mid_fmt = workbook.add_format({
+        "font_name": "Calibri", "font_size": 9, "bold": True,
+        "font_color": "#B8860B", "bg_color": "#FFFDE7",
+        "border": 1, "align": "center", "valign": "vcenter"
+    })
+    score_low_fmt = workbook.add_format({
+        "font_name": "Calibri", "font_size": 9, "bold": True,
+        "font_color": "#8B0000", "bg_color": "#FFEBEE",
+        "border": 1, "align": "center", "valign": "vcenter"
+    })
+    title_fmt = workbook.add_format({
+        "bold": True, "font_name": "Calibri", "font_size": 16,
+        "font_color": CORP_NAVY, "align": "left", "valign": "vcenter"
+    })
+    meta_fmt = workbook.add_format({
+        "font_name": "Calibri", "font_size": 9,
+        "font_color": "#666666", "align": "left"
+    })
+
+    cols = list(df.columns)
+    n_cols = len(cols)
+
+    # Title banner
+    worksheet.merge_range(0, 0, 0, n_cols - 1, f"⚡ CV Screener Pro · {title}", title_fmt)
+    worksheet.set_row(0, 30)
+    worksheet.merge_range(1, 0, 1, n_cols - 1,
+        f"Generated: {datetime.now().strftime('%d %B %Y, %H:%M')}  |  Total Kandidat: {len(df)}",
+        meta_fmt)
+    worksheet.set_row(1, 18)
+
+    # Column headers
+    for col_idx, col_name in enumerate(cols):
+        worksheet.write(2, col_idx, col_name.replace("_", " ").upper(), header_fmt)
+    worksheet.set_row(2, 28)
+
+    # Data rows
+    for row_idx, (_, row) in enumerate(df.iterrows()):
+        excel_row = row_idx + 3
+        fmt = row_even_fmt if row_idx % 2 == 0 else row_odd_fmt
+        worksheet.set_row(excel_row, 18)
+        for col_idx, col_name in enumerate(cols):
+            val = row[col_name]
+            if pd.isna(val):
+                val = ""
+            # Score color coding
+            if col_name in ["Skor_AI", "score", "Score"] and isinstance(val, (int, float)) and val != "":
+                if float(val) >= 75:
+                    worksheet.write(excel_row, col_idx, val, score_high_fmt)
+                elif float(val) >= 50:
+                    worksheet.write(excel_row, col_idx, val, score_mid_fmt)
+                else:
+                    worksheet.write(excel_row, col_idx, val, score_low_fmt)
             else:
-                cell.alignment = center_align
+                worksheet.write(excel_row, col_idx, str(val) if val != "" else "", fmt)
 
-    for col in ws.columns:
-        max_len = max(len(str(cell.value or '')) for cell in col)
-        col_letter = col[0].column_letter
-        ws.column_dimensions[col_letter].width = min(max(max_len + 3, 12), 45)
+    # Auto column widths
+    for col_idx, col_name in enumerate(cols):
+        max_width = max(len(str(col_name)), 10)
+        for _, row in df.iterrows():
+            val = str(row[col_name]) if not pd.isna(row[col_name]) else ""
+            max_width = max(max_width, min(len(val), 50))
+        worksheet.set_column(col_idx, col_idx, max_width + 2)
+
+    workbook.close()
+    output.seek(0)
+    logger.info("EXPORT_AGENT: Excel report generated successfully.")
+    return output.read()
+
+
+def generate_pdf_report(df: pd.DataFrame, title: str = "Laporan Kandidat CV Screener") -> bytes:
+    """
+    Generate a clean landscape corporate PDF report using fpdf2.
+    """
+    logger.info(f"EXPORT_AGENT: Generating PDF report with {len(df)} records...")
+
+    class CorporatePDF(FPDF):
+        def header(self):
+            r, g, b = _hex_to_rgb(CORP_NAVY)
+            self.set_fill_color(r, g, b)
+            self.rect(0, 0, 297, 22, "F")
+            self.set_font("Helvetica", "B", 14)
+            self.set_text_color(255, 255, 255)
+            self.set_xy(10, 5)
+            self.cell(0, 12, f"CV Screener Pro | {title}", align="L")
+            self.set_font("Helvetica", "", 8)
+            self.set_xy(10, 14)
+            self.cell(0, 6, f"Generated: {datetime.now().strftime('%d %B %Y %H:%M')}  |  Total: {len(df)} kandidat", align="L")
+            self.ln(8)
+
+        def footer(self):
+            self.set_y(-12)
+            r, g, b = _hex_to_rgb(CORP_NAVY)
+            self.set_fill_color(r, g, b)
+            self.rect(0, self.get_y(), 297, 12, "F")
+            self.set_font("Helvetica", "I", 8)
+            self.set_text_color(180, 200, 220)
+            self.cell(0, 10, f"CV Screener Pro · Page {self.page_no()}", align="C")
+
+    pdf = CorporatePDF(orientation="L", unit="mm", format="A4")
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+
+    # Column configuration
+    display_cols = [c for c in df.columns if c not in ["resume_text", "Analisis_AI"]]
+    n_cols = len(display_cols)
+    page_width = 267  # A4 landscape usable width
+    col_width = page_width / n_cols
+
+    # Table header
+    r, g, b = _hex_to_rgb(CORP_BLUE)
+    pdf.set_fill_color(r, g, b)
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Helvetica", "B", 7)
+    pdf.set_xy(10, pdf.get_y() + 2)
+    for col in display_cols:
+        pdf.cell(col_width, 8, col.replace("_", " ").upper()[:18], border=1, align="C", fill=True)
+    pdf.ln()
+
+    # Data rows
+    pdf.set_font("Helvetica", "", 7)
+    for i, (_, row) in enumerate(df.iterrows()):
+        if i % 2 == 0:
+            pdf.set_fill_color(248, 250, 255)
+        else:
+            pdf.set_fill_color(255, 255, 255)
+        pdf.set_text_color(10, 22, 40)
+        for col in display_cols:
+            val = str(row.get(col, ""))[:22]
+            # Score coloring
+            if col in ["Skor_AI", "score"] and val.replace(".", "").isdigit():
+                score = float(val)
+                if score >= 75:
+                    pdf.set_text_color(0, 100, 0)
+                elif score >= 50:
+                    pdf.set_text_color(180, 120, 0)
+                else:
+                    pdf.set_text_color(180, 0, 0)
+            else:
+                pdf.set_text_color(10, 22, 40)
+            pdf.cell(col_width, 7, val, border=1, align="C", fill=True)
+        pdf.ln()
 
     output = io.BytesIO()
-    wb.save(output)
-    return output.getvalue()
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# PDF EXPORT ENGINE V2 (BYPASSING LEGACY APP CACHE)
-# ──────────────────────────────────────────────────────────────────────────────
-def sanitize_for_fpdf(text):
-    if text is None:
-        return ""
-    # Forced standard Western Encoding - completely strips emojis/broken bytes
-    return str(text).strip().encode('latin-1', 'ignore').decode('latin-1')
-
-
-def generate_pdf_report_v2(dataframe: pd.DataFrame, title_text="Enterprise Report") -> bytes:
-    """
-    New functional block using robust fpdf2 table mapping.
-    Completely isolated from the old pdf.cell crash loop.
-    """
-    pdf = FPDF(orientation="L", unit="mm", format="A4")
-    pdf.add_page()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    
-    # Title Block
-    pdf.set_font("Arial", "B", 14)
-    pdf.set_text_color(15, 23, 42)
-    pdf.cell(0, 10, sanitize_for_fpdf(title_text), ln=True, align="L")
-    pdf.ln(3)
-    
-    if dataframe.empty:
-        pdf.set_font("Arial", "I", 10)
-        pdf.cell(0, 10, "No data available.", ln=True, align="C")
-        return bytes(pdf.output())
-
-    clean_headers = [sanitize_for_fpdf(col) for col in dataframe.columns]
-    
-    clean_rows = []
-    for _, row in dataframe.iterrows():
-        sanitized_row = [sanitize_for_fpdf(row[col]) for col in dataframe.columns]
-        clean_rows.append(sanitized_row)
-
-    # Core Table Tool (Immune to cell overlap)
-    with pdf.table(
-        borders_layout="HORIZONTAL_LINES", 
-        cell_fill_color=245, 
-        cell_fill_mode="ROWS",
-        line_height=7,
-        text_align="CENTER"
-    ) as table:
-        
-        # Headers Line
-        header_row = table.row()
-        pdf.set_font("Arial", "B", 10)
-        pdf.set_text_color(255, 255, 255)
-        for h_cell in clean_headers:
-            header_row.cell(h_cell, background_color=(15, 23, 42))
-            
-        # Data Streams Line
-        pdf.set_font("Arial", "", 9)
-        pdf.set_text_color(15, 23, 42)
-        for row_data in clean_rows:
-            data_row = table.row()
-            for cell_value in row_data:
-                if len(cell_value) > 30:
-                    data_row.cell(cell_value, text_align="LEFT")
-                else:
-                    data_row.cell(cell_value, text_align="CENTER")
-
-    return bytes(pdf.output())
+    pdf_bytes = pdf.output()
+    logger.info("EXPORT_AGENT: PDF report generated successfully.")
+    return bytes(pdf_bytes)
