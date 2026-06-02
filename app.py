@@ -1,6 +1,6 @@
 """
 CV Screener Pro — Enterprise Talent Intelligence Platform
-Standardized Ultra-Clean Version - 100% Fixed Syntax & Brackets Encryption
+100% Safe Version - Fixed String Literal Line 149
 """
 import streamlit as st
 import pandas as pd
@@ -8,7 +8,6 @@ from datetime import datetime
 import sys
 import os
 
-# Ensure project root is in path safely
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 from utils.auth import require_auth, logout
@@ -27,14 +26,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Inject Fixed Premium CSS
 st.markdown(PREMIUM_CSS, unsafe_allow_html=True)
 
 if not require_auth():
     st.stop()
 
 # ==============================================================================
-# PREMIUM KORPORAT MULTI-PAGE ANIMATION ENGINE (HTML EMBED METHOD)
+# PREMIUM ANIMATION ENGINE
 # ==============================================================================
 def render_corporate_animation(page_name):
     if page_name == "Overview":
@@ -54,7 +52,7 @@ def render_corporate_animation(page_name):
     st.components.v1.html(html_code, height=185)
 
 # ──────────────────────────────
-# FIXED SIDEBAR NAVIGATION
+# SIDEBAR NAVIGATION
 # ──────────────────────────────
 with st.sidebar:
     st.markdown("""
@@ -75,8 +73,6 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("<p class='nav-header-text'>Navigation Panel</p>", unsafe_allow_html=True)
-
     page = st.radio("", [
         "🏠  Executive Overview",
         "🗄️  Master Data Explorer",
@@ -91,12 +87,11 @@ with st.sidebar:
         
     st.markdown(f"<p class='version-text'>v4.1.0 · {datetime.now().strftime('%d %b %Y')}</p>", unsafe_allow_html=True)
 
-
 # ══════════════════════════════════════════════════════════════════
-# PAGE 1: EXECUTIVE OVERVIEW (BERANDA)
+# PAGE 1: EXECUTIVE OVERVIEW
 # ══════════════════════════════════════════════════════════════════
 if "Executive Overview" in page:
-    logger.info("NAV: Navigated to Executive Overview")
+    logger.info("NAV: Executive Overview loaded")
 
     col_title, col_anim = st.columns([2, 1])
     with col_title:
@@ -112,7 +107,6 @@ if "Executive Overview" in page:
     df = load_database()
     total_records = len(df)
 
-    # Menghitung Metrik Secara Aman dan Kebal Typo
     avg_score = "—"
     if "Skor_AI" in df.columns and df["Skor_AI"].notna().any():
         avg_score = f"{df['Skor_AI'].dropna().astype(float).mean():.1f}"
@@ -121,7 +115,6 @@ if "Executive Overview" in page:
     if "Status" in df.columns and not df.empty:
         passed_count = len(df[df["Status"].astype(str).str.lower().str.contains("lolos|pass|approved|recommended", na=False)])
 
-    # Core Metric Cards Grid Render
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         st.markdown(f'<div class="metric-card"><span class="metric-icon">👥</span><div class="metric-value" style="color:#00E5FF;">{total_records}</div><div class="metric-label">Total Candidates</div></div>', unsafe_allow_html=True)
@@ -134,7 +127,6 @@ if "Executive Overview" in page:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Charts Presentation
     col_chart1, col_chart2 = st.columns([3, 2])
     with col_chart1:
         st.markdown('<div class="section-card">', unsafe_allow_html=True)
@@ -146,4 +138,27 @@ if "Executive Overview" in page:
             chart_data.columns = ["Score Range", "Count"]
             st.bar_chart(chart_data.set_index("Score Range"), color="#00E5FF")
         else:
-            st.info("
+            st.info("No logs available. Run AI Screener.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with col_chart2:
+        st.markdown('<div class="section-card">', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">🗂️ Department Distribution</div>', unsafe_allow_html=True)
+        if "Departemen" in df.columns and not df["Departemen"].dropna().empty:
+            dept_count = df["Departemen"].value_counts().head(5)
+            st.bar_chart(dept_count, color="#7000FF")
+        else:
+            st.info("Department data empty.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="section-card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">📥 Global Export Matrix</div>', unsafe_allow_html=True)
+    col_e1, col_e2, col_e3 = st.columns(3)
+    with col_e1:
+        if not df.empty:
+            excel_bytes = generate_excel_report(df, "Executive Core Report")
+            st.download_button("📊 Export System to Excel (.xlsx)", data=excel_bytes, file_name="Enterprise_Report.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+    with col_e2:
+        if not df.empty:
+            pdf_bytes = generate_pdf_report_v2(df, "Executive Corporate Data")
+            st.download_button("📄 Export Dashboard to PDF (.pdf)", data=pdf_bytes, file_name="Enterprise_Report.pdf", mime="application
