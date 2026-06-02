@@ -1,7 +1,7 @@
 """
-Technical Export Agent — Clean FPDF2 Table Edition
-- Handles clean data exports to Excel and PDF
-- Uses modern fpdf2 Table Utility to completely prevent encoding crashes & overlapping text
+Technical Export Agent — Bulletproof Table Edition (V2)
+- Replaced legacy pdf.cell looping with modern with pdf.table() block
+- Fully handles clean data exports to Excel and PDF without encoding crashes
 """
 import io
 import pandas as pd
@@ -13,7 +13,6 @@ from fpdf import FPDF
 # EXCEL EXPORT ENGINE
 # ──────────────────────────────────────────────────────────────────────────────
 def generate_excel_report(dataframe: pd.DataFrame, sheet_name="Data Export") -> bytes:
-    """Generates a professionally styled Excel sheet with corporate formatting."""
     wb = Workbook()
     ws = wb.active
     ws.title = sheet_name[:31]
@@ -68,27 +67,25 @@ def generate_excel_report(dataframe: pd.DataFrame, sheet_name="Data Export") -> 
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# PDF EXPORT ENGINE (FIXED UNICODE & LAYOUT VIA FPDF2 TABLE UTILITY)
+# PDF EXPORT ENGINE V2 (BYPASSING LEGACY APP CACHE)
 # ──────────────────────────────────────────────────────────────────────────────
 def sanitize_for_fpdf(text):
-    """Rigorous sanitation that drops emojis, quotes, and non-latin symbols entirely."""
     if text is None:
         return ""
-    # Convert to pure string, encode to standard latin-1 while ignoring errors, then decode safely
-    s = str(text).strip()
-    return s.encode('latin-1', 'ignore').decode('latin-1')
+    # Forced standard Western Encoding - completely strips emojis/broken bytes
+    return str(text).strip().encode('latin-1', 'ignore').decode('latin-1')
 
 
-def generate_pdf_report(dataframe: pd.DataFrame, title_text="Enterprise Report") -> bytes:
+def generate_pdf_report_v2(dataframe: pd.DataFrame, title_text="Enterprise Report") -> bytes:
     """
-    Generates an automated A4 report using robust modern fpdf2 Table block logic.
-    Completely replaces legacy pdf.cell looping.
+    New functional block using robust fpdf2 table mapping.
+    Completely isolated from the old pdf.cell crash loop.
     """
     pdf = FPDF(orientation="L", unit="mm", format="A4")
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
     
-    # Render Structural Page Title Header
+    # Title Block
     pdf.set_font("Arial", "B", 14)
     pdf.set_text_color(15, 23, 42)
     pdf.cell(0, 10, sanitize_for_fpdf(title_text), ln=True, align="L")
@@ -96,10 +93,9 @@ def generate_pdf_report(dataframe: pd.DataFrame, title_text="Enterprise Report")
     
     if dataframe.empty:
         pdf.set_font("Arial", "I", 10)
-        pdf.cell(0, 10, "No records available.", ln=True, align="C")
+        pdf.cell(0, 10, "No data available.", ln=True, align="C")
         return bytes(pdf.output())
 
-    # Form clean list grids
     clean_headers = [sanitize_for_fpdf(col) for col in dataframe.columns]
     
     clean_rows = []
@@ -107,7 +103,7 @@ def generate_pdf_report(dataframe: pd.DataFrame, title_text="Enterprise Report")
         sanitized_row = [sanitize_for_fpdf(row[col]) for col in dataframe.columns]
         clean_rows.append(sanitized_row)
 
-    # Initialize Modern Table block tool
+    # Core Table Tool (Immune to cell overlap)
     with pdf.table(
         borders_layout="HORIZONTAL_LINES", 
         cell_fill_color=245, 
@@ -116,14 +112,14 @@ def generate_pdf_report(dataframe: pd.DataFrame, title_text="Enterprise Report")
         text_align="CENTER"
     ) as table:
         
-        # Header Row
+        # Headers Line
         header_row = table.row()
         pdf.set_font("Arial", "B", 10)
         pdf.set_text_color(255, 255, 255)
-        for header_cell in clean_headers:
-            header_row.cell(header_cell, background_color=(15, 23, 42))
+        for h_cell in clean_headers:
+            header_row.cell(h_cell, background_color=(15, 23, 42))
             
-        # Data Rows
+        # Data Streams Line
         pdf.set_font("Arial", "", 9)
         pdf.set_text_color(15, 23, 42)
         for row_data in clean_rows:
